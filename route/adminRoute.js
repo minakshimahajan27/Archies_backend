@@ -91,6 +91,14 @@ import { addPackage, getAllPackages, updatePackage, deletePackage } from '../con
 import { addMedia, getAllMedia, deleteMedia, updateMedia } from '../controller/mediaController.js';
 import { addStudent, getAllStudents, getStudentById, updateStudent, deleteStudent } from '../controller/studentController.js';
 import { addReview, getAllReviews, updateReview, deleteReview } from '../controller/reviewController.js';
+import { addCourse, getAllCourses, updateCourse, deleteCourse } from '../controller/courseController.js';
+import { 
+    getActiveFashionShow, 
+    updateFashionShowDetails, 
+    registerForFashionShow, 
+    getAllFashionShowRegistrations, 
+    deleteFashionShowRegistration 
+} from '../controller/fashionShowController.js';
 import upload from '../middleware/upload.js';
 const router = express.Router();
 
@@ -123,5 +131,18 @@ router.post('/reviews/add', upload.single('file'), addReview);
 router.get('/reviews/all', getAllReviews);
 router.put('/reviews/update/:id', upload.single('file'), updateReview); // <-- Yeh update ka route hai
 router.delete('/reviews/delete/:id', deleteReview);
+
+//class
+router.post('/courses/add', upload.single('file'), addCourse);
+router.get('/courses/all', getAllCourses);
+router.put('/courses/update/:id', upload.single('file'), updateCourse); // <-- Yeh update ka route hai
+router.delete('/courses/delete/:id', deleteCourse);
+
+//fashion
+router.get('/fashion-show/active', getActiveFashionShow);
+router.post('/fashion-show/update', upload.single('file'), updateFashionShowDetails);
+router.post('/fashion-show/register', upload.single('file'), registerForFashionShow);
+router.get('/fashion-show/registrations', getAllFashionShowRegistrations);
+router.delete('/fashion-show/registration/delete/:id', deleteFashionShowRegistration);
 
 export default router;
