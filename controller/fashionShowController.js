@@ -1,111 +1,128 @@
 import FashionShow from '../models/fashionShowModel.js';
 import FashionShowRegistration from '../models/fashionShowRegistrationModel.js';
-
-// 1. Get Active Fashion Show Info (Frontend Homepage ke liye)
-export const getActiveFashionShow = async (req, res) => {
+// 1. Create Event (POST)
+export const createFashionShow = async (req, res) => {
     try {
-        const show = await FashionShow.findOne({ isActive: true });
-        res.status(200).json({ success: true, data: show });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        const { title, description, eventDate, venue, categories } = req.body;
+        
+        // Multer se aayi hui files ke paths
+        const banner = req.files?.banner ? req.files.banner[0].path : '';
+        const qrCode = req.files?.qrCode ? req.files.qrCode[0].path : '';
+
+        const parsedCategories = typeof categories === 'string' ? JSON.parse(categories) : categories;
+
+        const newShow = new FashionShow({
+            title,
+            description,
+            eventDate,
+            venue,
+            categories: parsedCategories,
+            banner,
+            qrCode
+        });
+
+        await newShow.save();
+        res.status(201).json({ success: true, message: 'Fashion show created successfully', data: newShow });
+    } catch (err) {
+        console.error("Create Error:", err);
+        res.status(500).json({ success: false, message: err.message });
     }
 };
 
-// 2. Admin: Create or Update Event Details & Active Status
-export const updateFashionShowDetails = async (req, res) => {
+// 2. Get All Events (GET)
+export const getAllFashionShows = async (req, res) => {
     try {
-        const { title, description, eventDate, venue, registrationFee, isActive } = req.body;
-        
-        let show = await FashionShow.findOne();
-        const qrCodeImage = req.file ? req.file.path : (show ? show.qrCodeImage : '');
+        const shows = await FashionShow.find().sort({ createdAt: -1 });
+        res.status(200).json({ success: true, data: shows });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
 
-        if (show) {
-            show.title = title;
-            show.description = description;
-            show.eventDate = eventDate;
-            show.venue = venue;
-            show.registrationFee = registrationFee;
-            show.isActive = isActive === 'true' || isActive === true;
-            if (req.file) show.qrCodeImage = qrCodeImage;
-            await show.save();
-        } else {
-            show = new FashionShow({
-                title, description, eventDate, venue, registrationFee, qrCodeImage, isActive
-            });
-            await show.save();
+// 3. Update Event (PUT) - **यह रही Update की API**
+export const updateFashionShow = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { title, description, eventDate, venue, categories } = req.body;
+
+        let updateData = {
+            title,
+            description,
+            eventDate,
+            venue
+        };
+
+        if (categories) {
+            updateData.categories = typeof categories === 'string' ? JSON.parse(categories) : categories;
         }
 
-        res.status(200).json({ success: true, message: 'Fashion Show details updated successfully!', data: show });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        // Agar nayi banner image upload ki hai toh use update karein
+        if (req.files?.banner) {
+            updateData.banner = req.files.banner[0].path;
+        }
+
+        // Agar naya QR code upload kiya hai toh use update karein
+        if (req.files?.qrCode) {
+            updateData.qrCode = req.files.qrCode[0].path;
+        }
+
+        const updatedShow = await FashionShow.findByIdAndUpdate(id, updateData, { new: true });
+
+        if (!updatedShow) {
+            return res.status(404).json({ success: false, message: 'Event not found' });
+        }
+
+        res.status(200).json({ success: true, message: 'Fashion show updated successfully', data: updatedShow });
+    } catch (err) {
+        console.error("Update Error:", err);
+        res.status(500).json({ success: false, message: err.message });
     }
 };
 
-// 3. Student Registration & Entry Pass Generation
+// 4. Delete Event (DELETE)
+export const deleteFashionShow = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const deletedShow = await FashionShow.findByIdAndDelete(id);
+
+        if (!deletedShow) {
+            return res.status(404).json({ success: false, message: 'Event not found' });
+        }
+
+        res.status(200).json({ success: true, message: 'Fashion show deleted successfully' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
+    }
+};
+
+// 5. User Registration (POST)
 export const registerForFashionShow = async (req, res) => {
     try {
-        const { studentName, email, phone, transactionId } = req.body;
-        const paymentScreenshot = req.file ? req.file.path : '';
+        const { eventId, name, email, phone, categoryName, fee, transactionId } = req.body;
 
-        // Random Unique Pass Code Generate Karein
-        const passCode = 'FS-' + Math.floor(100000 + Math.random() * 900000);
-
-        const registration = new FashionShowRegistration({
-            studentName,
+        const newRegistration = new FashionShowRegistration({
+            eventId,
+            name,
             email,
             phone,
-            transactionId,
-            paymentScreenshot,
-            passCode
+            categoryName,
+            fee,
+            transactionId
         });
 
-        await registration.save();
-
-        res.status(201).json({
-            success: true,
-            message: 'Registration successful!',
-            passDetails: {
-                studentName,
-                email,
-                phone,
-                passCode,
-                createdAt: registration.createdAt
-            }
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        await newRegistration.save();
+        res.status(201).json({ success: true, message: 'Registration successful!' });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
 };
 
-// 4. Admin: Get All Student Registrations for Fashion Show
-export const getAllFashionShowRegistrations = async (req, res) => {
+// 6. Get All Registrations for Admin (GET)
+export const getAllRegistrations = async (req, res) => {
     try {
-        const registrations = await FashionShowRegistration.find().sort({ createdAt: -1 });
-        res.status(200).json({
-            success: true,
-            count: registrations.length,
-            data: registrations
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
-
-// 5. Admin: Delete Student Registration
-export const deleteFashionShowRegistration = async (req, res) => {
-    try {
-        const deletedRegistration = await FashionShowRegistration.findByIdAndDelete(req.params.id);
-        if (!deletedRegistration) {
-            return res.status(404).json({
-                success: false,
-                message: 'Registration not found'
-            });
-        }
-        res.status(200).json({
-            success: true,
-            message: 'Registration deleted successfully'
-        });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
+        const registrations = await FashionShowRegistration.find().populate('eventId').sort({ createdAt: -1 });
+        res.status(200).json({ success: true, data: registrations });
+    } catch (err) {
+        res.status(500).json({ success: false, message: err.message });
     }
 };

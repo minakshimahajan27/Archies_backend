@@ -1,14 +1,13 @@
 import mongoose from 'mongoose';
 
-const fashionShowRegistrationSchema = new mongoose.Schema({
-    studentName: { type: String, required: true },
+const registrationSchema = new mongoose.Schema({
+    eventId: { type: mongoose.Schema.Types.ObjectId, ref: 'FashionShow', required: true },
+    name: { type: String, required: true },
     email: { type: String, required: true },
     phone: { type: String, required: true },
-    transactionId: { type: String, required: true },
-    paymentScreenshot: { type: String, default: '' },
-    passCode: { type: String, required: true, unique: true }, // Unique Pass Code
-    status: { type: String, enum: ['Pending', 'Approved'], default: 'Approved' }
+    categoryName: { type: String, required: true },
+    fee: { type: Number, required: true },
+    transactionId: { type: String, required: true }
 }, { timestamps: true });
 
-const FashionShowRegistration = mongoose.model('FashionShowRegistration', fashionShowRegistrationSchema);
-export default FashionShowRegistration;
+export default mongoose.model('FashionShowRegistration', registrationSchema);
