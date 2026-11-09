@@ -103,23 +103,59 @@
 
 import Student from '../models/studentModel.js';
 
+// export const addStudent = async (req, res) => {
+//     try {
+//         const newStudent = new Student(req.body);
+//         const savedStudent = await newStudent.save();
+//         res.status(201).json({
+//             success: true,
+//             message: 'Student added successfully to academy',
+//             data: savedStudent
+//         });
+//     } catch (error) {
+//         res.status(500).json({
+//             success: false,
+//             message: error.message
+//         });
+//     }
+// };
+
 export const addStudent = async (req, res) => {
     try {
-        const newStudent = new Student(req.body);
+        console.log("Student Body:", req.body);
+        console.log("Uploaded File:", req.file);
+
+        const newStudent = new Student({
+            ...req.body,
+
+            // Save uploaded image filename
+            photo: req.file ? req.file.filename : ''
+        });
+
         const savedStudent = await newStudent.save();
+
         res.status(201).json({
             success: true,
             message: 'Student added successfully to academy',
             data: savedStudent
         });
+
     } catch (error) {
+        console.error("Add Student Error:", error);
+
+        if (error.code === 11000) {
+            return res.status(409).json({
+                success: false,
+                message: 'This email is already registered!'
+            });
+        }
+
         res.status(500).json({
             success: false,
             message: error.message
         });
     }
 };
-
 export const getAllStudents = async (req, res) => {
     try {
         const students = await Student.find();
