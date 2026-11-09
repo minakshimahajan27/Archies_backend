@@ -21,7 +21,7 @@ const packageSchema = new mongoose.Schema({
     },
     packageImage: {
         type: String, // Yahan image ka URL ya path save hoga
-        required: [true, "Package image is required"]
+        // required: [true, "Package image is required"]
     }
 }, { timestamps: true });
 
